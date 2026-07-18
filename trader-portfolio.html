@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[Jouw naam] — Technical analysis trader</title>
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --text: #14141a;
+    --text-dim: rgba(20,20,26,0.62);
+    --text-faint: rgba(20,20,26,0.42);
+    --glass-border: rgba(20,20,26,0.10);
+    --lilac: #b9a6ff;
+    --mint: #8fe4d1;
+    --pink: #ffb3d6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ---------- Aurora background ---------- */
+  .aurora {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    filter: blur(90px);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .blob { position: absolute; border-radius: 50%; mix-blend-mode: multiply; }
+  .blob-1 { width: 55vw; height: 55vw; top: -18vw; left: -12vw;
+    background: radial-gradient(circle, var(--lilac) 0%, transparent 70%);
+    animation: drift1 24s ease-in-out infinite; }
+  .blob-2 { width: 45vw; height: 45vw; top: 5vw; right: -14vw;
+    background: radial-gradient(circle, var(--mint) 0%, transparent 70%);
+    animation: drift2 28s ease-in-out infinite; }
+  .blob-3 { width: 40vw; height: 40vw; top: 70vh; left: 25vw;
+    background: radial-gradient(circle, var(--pink) 0%, transparent 70%);
+    animation: drift3 32s ease-in-out infinite; }
+
+  @keyframes drift1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(5vw,4vw) scale(1.12); } }
+  @keyframes drift2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-5vw,5vw) scale(1.08); } }
+  @keyframes drift3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(4vw,-4vw) scale(1.15); } }
+
+  .noise {
+    position: fixed; inset: 0; z-index: 1; opacity: 0.025; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  main, header, footer { position: relative; z-index: 2; }
+
+  /* ---------- Nav ---------- */
+  nav {
+    max-width: 1040px; margin: 0 auto; padding: 28px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .logo { font-weight: 600; font-size: 16px; letter-spacing: -0.01em; }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { color: var(--text-dim); text-decoration: none; font-size: 14px; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--text); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    max-width: 720px; margin: 0 auto; padding: 9vh 24px 12vh; text-align: center;
+    position: relative;
+  }
+  .eyebrow {
+    font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 20px;
+  }
+  h1 { font-size: clamp(38px, 6vw, 60px); font-weight: 600; line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 22px; }
+  .hero p.sub { font-size: 18px; color: var(--text-dim); line-height: 1.6; max-width: 540px; margin: 0 auto 36px; }
+
+  /* Signature element: a candlestick chart behind the hero, candles rising in one by one */
+  .candles { position: absolute; top: 34%; left: 50%; transform: translateX(-50%); width: 640px; max-width: 100%; z-index: -1; opacity: 0.55; }
+  .candles .wick { stroke: var(--text-faint); stroke-width: 1.2; }
+  .candles .body { transform-origin: center bottom; opacity: 0; animation: rise 0.5s ease-out forwards; }
+  .candles .up { fill: var(--mint); }
+  .candles .down { fill: var(--pink); }
+  @keyframes rise {
+    from { opacity: 0; transform: scaleY(0.2) translateY(6px); }
+    to { opacity: 1; transform: scaleY(1) translateY(0); }
+  }
+
+  /* ---------- Scroll reveal ---------- */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease-out, transform 0.7s ease-out; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; padding: 12px 24px; border-radius: 999px; font-size: 14px;
+    text-decoration: none; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border); transition: transform 0.2s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn-secondary { background: rgba(255,255,255,0.55); color: var(--text); box-shadow: 0 4px 16px rgba(20,20,26,0.05); }
+
+  /* ---------- Section shell ---------- */
+  section { max-width: 1040px; margin: 0 auto; padding: 6vh 24px; }
+  .section-label { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 12px; }
+  h2 { font-size: clamp(26px, 3.4vw, 34px); font-weight: 600; letter-spacing: -0.01em; margin-bottom: 16px; }
+
+  /* ---------- About ---------- */
+  .about-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: start; margin-top: 32px; }
+  .about-grid p { font-size: 16px; line-height: 1.75; color: var(--text-dim); margin-bottom: 16px; }
+  .glass-card {
+    background: rgba(255,255,255,0.55); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border); border-radius: 16px; padding: 28px 30px;
+    box-shadow: 0 8px 32px rgba(20,20,26,0.06);
+  }
+  .bg-list { list-style: none; }
+  .bg-list li { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--glass-border); font-size: 14.5px; }
+  .bg-list li:last-child { border-bottom: none; }
+  .bg-list .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text); margin-top: 7px; flex-shrink: 0; }
+
+  /* ---------- Approach: 3 pillars ---------- */
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 32px; }
+  .pillar { padding: 28px 24px; }
+  .pillar .num { font-size: 13px; color: var(--text-faint); margin-bottom: 14px; }
+  .pillar h3 { font-size: 17px; font-weight: 600; margin-bottom: 10px; }
+  .pillar p { font-size: 14.5px; line-height: 1.65; color: var(--text-dim); }
+
+  /* ---------- Track record ---------- */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 32px; }
+  .stat-card { padding: 24px 20px; text-align: left; }
+  .stat-card .num { font-size: 30px; font-weight: 600; margin-bottom: 4px; }
+  .stat-card .label { font-size: 13px; color: var(--text-dim); }
+  .stat-note { margin-top: 16px; font-size: 13px; color: var(--text-faint); }
+
+  /* ---------- Performance chart + heatmap ---------- */
+  .perf-block { margin-top: 40px; }
+  .perf-title { font-size: 15px; font-weight: 600; margin-bottom: 18px; }
+  .growth-chart { padding: 24px 22px 16px; }
+  .growth-chart svg { width: 100%; height: auto; overflow: visible; }
+  .growth-chart .growth-line { fill: none; stroke: var(--mint); stroke-width: 2.5; }
+  .growth-chart .growth-fill { opacity: 0.35; }
+  .growth-chart .axis-label { font-size: 11px; fill: var(--text-faint); }
+  .growth-chart .grid-line { stroke: var(--glass-border); stroke-width: 1; }
+  .growth-chart .end-dot { fill: var(--mint); }
+  .growth-chart .end-value { font-size: 13px; font-weight: 600; fill: var(--text); }
+
+  .heatmap-wrap { overflow-x: auto; margin-top: 20px; }
+  table.heatmap { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  table.heatmap th { font-weight: 500; color: var(--text-faint); padding: 6px 4px; text-align: center; }
+  table.heatmap th.total-th { color: var(--text-dim); font-weight: 600; }
+  table.heatmap td { text-align: center; padding: 0; }
+  table.heatmap .yr-cell { text-align: left; padding-left: 8px; color: var(--text-dim); font-weight: 600; }
+  table.heatmap .cell { width: 60px; height: 34px; border-radius: 6px; margin: 2px; display: flex; align-items: center; justify-content: center; }
+  table.heatmap .cell-inner { width: 100%; height: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--text); font-size: 12px; }
+  table.heatmap .cell-empty { background: rgba(20,20,26,0.04); color: var(--text-faint); }
+  table.heatmap .total-cell { font-weight: 700; font-size: 13px; border-left: 1px solid var(--glass-border); }
+
+  .no-data {
+    text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 14px;
+    border: 1px dashed var(--glass-border); border-radius: 12px; margin-top: 20px;
+  }
+  .no-data code { background: rgba(20,20,26,0.06); padding: 2px 6px; border-radius: 4px; font-size: 12.5px; }
+
+  /* ---------- Journey / content ---------- */
+  .journey-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 32px; }
+  .journey-card { padding: 26px; display: flex; flex-direction: column; gap: 8px; }
+  .journey-card .platform { font-size: 13px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+  .journey-card h3 { font-size: 18px; font-weight: 600; }
+  .journey-card p { font-size: 14.5px; color: var(--text-dim); line-height: 1.6; }
+  .journey-card a { margin-top: 8px; font-size: 14px; color: var(--text); }
+
+  /* ---------- Footer ---------- */
+  footer { padding: 8vh 24px 6vh; text-align: center; }
+  footer .glass-card { display: inline-block; padding: 32px 44px; }
+  footer h2 { margin-bottom: 8px; }
+  footer p { color: var(--text-dim); margin-bottom: 24px; font-size: 15px; }
+  .foot-links { font-size: 13px; color: var(--text-faint); margin-top: 40px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blob, .price-trace path { animation: none !important; stroke-dashoffset: 0; }
+  }
+
+  @media (max-width: 760px) {
+    .about-grid, .journey-grid { grid-template-columns: 1fr; }
+    .pillars { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .nav-links { gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="aurora">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+  <div class="noise"></div>
+
+  <header>
+    <nav>
+      <div class="logo">[Jouw naam]</div>
+      <div class="nav-links">
+        <a href="#about">Over mij</a>
+        <a href="#approach">Aanpak</a>
+        <a href="#track-record">Track record</a>
+        <a href="#journey">Journey</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <svg class="candles" viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg">
+        <line class="wick" x1="20" y1="105" x2="20" y2="145"></line>
+        <rect class="body up" x="12" y="110" width="16" height="30" style="animation-delay:0.05s"></rect>
+        <line class="wick" x1="64" y1="108" x2="64" y2="130"></line>
+        <rect class="body down" x="56" y="110" width="16" height="15" style="animation-delay:0.15s"></rect>
+        <line class="wick" x1="108" y1="90" x2="108" y2="130"></line>
+        <rect class="body up" x="100" y="95" width="16" height="30" style="animation-delay:0.25s"></rect>
+        <line class="wick" x1="152" y1="98" x2="152" y2="120"></line>
+        <rect class="body down" x="144" y="95" width="16" height="20" style="animation-delay:0.35s"></rect>
+        <line class="wick" x1="196" y1="78" x2="196" y2="118"></line>
+        <rect class="body up" x="188" y="80" width="16" height="35" style="animation-delay:0.45s"></rect>
+        <line class="wick" x1="240" y1="82" x2="240" y2="103"></line>
+        <rect class="body down" x="232" y="80" width="16" height="20" style="animation-delay:0.55s"></rect>
+        <line class="wick" x1="284" y1="63" x2="284" y2="102"></line>
+        <rect class="body up" x="276" y="65" width="16" height="35" style="animation-delay:0.65s"></rect>
+        <line class="wick" x1="328" y1="67" x2="328" y2="88"></line>
+        <rect class="body down" x="320" y="65" width="16" height="20" style="animation-delay:0.75s"></rect>
+        <line class="wick" x1="372" y1="53" x2="372" y2="87"></line>
+        <rect class="body up" x="364" y="55" width="16" height="30" style="animation-delay:0.85s"></rect>
+        <line class="wick" x1="416" y1="57" x2="416" y2="73"></line>
+        <rect class="body down" x="408" y="55" width="16" height="15" style="animation-delay:0.95s"></rect>
+        <line class="wick" x1="460" y1="38" x2="460" y2="72"></line>
+        <rect class="body up" x="452" y="40" width="16" height="30" style="animation-delay:1.05s"></rect>
+        <line class="wick" x1="504" y1="42" x2="504" y2="63"></line>
+        <rect class="body down" x="496" y="40" width="16" height="20" style="animation-delay:1.15s"></rect>
+        <line class="wick" x1="548" y1="28" x2="548" y2="62"></line>
+        <rect class="body up" x="540" y="30" width="16" height="30" style="animation-delay:1.25s"></rect>
+        <line class="wick" x1="592" y1="32" x2="592" y2="48"></line>
+        <rect class="body down" x="584" y="30" width="16" height="15" style="animation-delay:1.35s"></rect>
+      </svg>
+      <div class="eyebrow">Technical analysis trader — België</div>
+      <h1>Marktstructuur lezen.<br>First principles toepassen.</h1>
+      <p class="sub">Ik bouw mijn trading carrière in het open — elke setup, elke fout, elke les gedocumenteerd. Achtergrond in wetenschap en economie, getraind via 1-op-1 mentorship bij hedgefundmanagers.</p>
+      <div class="cta-row">
+        <a href="#journey" class="btn btn-primary">Volg de journey</a>
+        <a href="#approach" class="btn btn-secondary">Mijn aanpak</a>
+      </div>
+    </section>
+
+    <section id="about" class="reveal">
+      <div class="section-label">Over mij</div>
+      <h2>Van fysica naar de charts</h2>
+      <div class="about-grid">
+        <div>
+          <p>Ik combineer een achtergrond in wetenschap, fysica en economie met een obsessieve focus op technische analyse. First principles denken — niet aannemen wat "iedereen" zegt over de markt, maar zelf de structuur, het gedrag en de statistiek herleiden.</p>
+          <p>Ik rondde een intensieve 1-op-1 mentorship af bij hedgefundmanagers, gericht op discipline, risicobeheer en een systematische aanpak van marktanalyse. Dit is geen hobby — het is een carrièretraject dat ik publiek opbouw.</p>
+        </div>
+        <div class="glass-card">
+          <ul class="bg-list">
+            <li><span class="dot"></span> Wetenschappelijke achtergrond: fysica en economie</li>
+            <li><span class="dot"></span> 1-op-1 mentorship: hedgefundmanagers</li>
+            <li><span class="dot"></span> Focus: technical analysis, marktstructuur</li>
+            <li><span class="dot"></span> Basis: België</li>
+            <li><span class="dot"></span> Bouwt publiek: Instagram + Substack</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="approach" class="reveal">
+      <div class="section-label">Aanpak</div>
+      <h2>Drie pijlers van mijn methode</h2>
+      <div class="pillars">
+        <div class="glass-card pillar">
+          <div class="num">01</div>
+          <h3>First principles</h3>
+          <p>Elke aanname over de markt wordt herleid tot de onderliggende structuur — geen indicatoren zonder te weten waarom ze werken.</p>
+        </div>
+        <div class="glass-card pillar">
+          <div class="num">02</div>
+          <h3>Risicobeheer eerst</h3>
+          <p>Positiegrootte en risico per trade bepalen de strategie, niet omgekeerd. Overleven is voorwaarde nummer één.</p>
+        </div>
+        <div class="glass-card pillar">
+          <div class="num">03</div>
+          <h3>Radicale transparantie</h3>
+          <p>Winst en verlies worden allebei gepubliceerd. De journey is het product, niet alleen het eindresultaat.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="track-record" class="reveal">
+      <div class="section-label">Track record</div>
+      <h2>Cijfers, eerlijk gerapporteerd</h2>
+      <div class="stats-grid">
+        <div class="glass-card stat-card">
+          <div class="num">[ ]%</div>
+          <div class="label">Win rate</div>
+        </div>
+        <div class="glass-card stat-card">
+          <div class="num">[ ]R</div>
+          <div class="label">Gem. risk/reward</div>
+        </div>
+        <div class="glass-card stat-card">
+          <div class="num">[ ]</div>
+          <div class="label">Maanden actief</div>
+        </div>
+        <div class="glass-card stat-card">
+          <div class="num">[ ]%</div>
+          <div class="label">Max drawdown</div>
+        </div>
+      </div>
+      <p class="stat-note">Vul deze in met je echte, geverifieerde cijfers zodra je een trackrecord van voldoende lengte hebt — lege of verzonnen statistieken ondermijnen precies de geloofwaardigheid die je opbouwt.</p>
+
+      <div class="perf-block">
+        <div class="perf-title">Groei over tijd</div>
+        <div id="yearly-chart" class="glass-card growth-chart"></div>
+      </div>
+
+      <div class="perf-block">
+        <div class="perf-title">Resultaat per maand</div>
+        <div id="heatmap" class="glass-card heatmap-wrap"></div>
+      </div>
+
+      <div id="no-data-msg" class="no-data" style="display:none;">
+        Geen resultatendata gevonden. Zorg dat <code>resultaten.csv</code> in dezelfde map staat als deze pagina, en dat de site online gehost is (lokaal <code>file://</code> openen werkt niet door browserbeveiliging).
+      </div>
+    </section>
+
+    <section id="journey" class="reveal">
+      <div class="section-label">Journey</div>
+      <h2>Volg elke stap</h2>
+      <div class="journey-grid">
+        <div class="glass-card journey-card">
+          <div class="platform">Instagram</div>
+          <h3>Dagelijkse setups en reflecties</h3>
+          <p>Korte, visuele updates over trades, denkwijze en lessen — in real-time.</p>
+          <a href="#">@[jouw handle] &#8594;</a>
+        </div>
+        <div class="glass-card journey-card">
+          <div class="platform">Substack</div>
+          <h3>Diepgaande analyses</h3>
+          <p>Wekelijkse breakdowns van marktstructuur, trade-reviews en de bredere strategie achter de journey.</p>
+          <a href="#">Abonneer je &#8594;</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="reveal">
+    <div class="glass-card">
+      <h2>In contact komen</h2>
+      <p>Vragen, samenwerkingen, of gewoon meelezen?</p>
+      <div class="cta-row">
+        <a href="mailto:[email]" class="btn btn-primary">Stuur een mail</a>
+      </div>
+    </div>
+    <div class="foot-links">© [jaar] [Jouw naam] — Alle content is educatief, geen financieel advies.</div>
+  </footer>
+
+  <script>
+    const revealEls = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+    revealEls.forEach(el => observer.observe(el));
+
+    /* ---------- Performance data: loaded from resultaten.csv ---------- */
+    const MONTH_LABELS = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+
+    function parseCSV(text) {
+      const lines = text.trim().split('\n').slice(1); // skip header
+      const data = {}; // { year: { month: pct|null } }
+      lines.forEach(line => {
+        const [year, month, pctRaw] = line.split(',').map(s => s.trim());
+        if (!year || !month) return;
+        const y = parseInt(year, 10);
+        const m = parseInt(month, 10);
+        const pct = pctRaw === '' || pctRaw === undefined ? null : parseFloat(pctRaw);
+        if (!data[y]) data[y] = {};
+        data[y][m] = (pct === null || isNaN(pct)) ? null : pct;
+      });
+      return data;
+    }
+
+    function pctToColor(pct, maxAbs = 8) {
+      if (pct === null || pct === undefined || isNaN(pct)) return null;
+      const clamped = Math.max(-maxAbs, Math.min(maxAbs, pct));
+      const t = Math.abs(clamped) / maxAbs; // 0..1 intensity
+      const mint = [143, 228, 209];
+      const pink = [255, 179, 214];
+      const base = [251, 250, 247]; // page bg, "neutral"
+      const target = clamped >= 0 ? mint : pink;
+      const rgb = base.map((b, i) => Math.round(b + (target[i] - b) * t));
+      return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    }
+
+    function renderGrowthChart(data) {
+      const container = document.getElementById('yearly-chart');
+      const years = Object.keys(data).map(Number).sort((a, b) => a - b);
+
+      // Build chronological list of {year, month, pct} for months with actual data
+      const points = [];
+      years.forEach(y => {
+        for (let m = 1; m <= 12; m++) {
+          const pct = data[y][m];
+          if (pct !== null && pct !== undefined) points.push({ year: y, month: m, pct });
+        }
+      });
+      if (points.length < 2) { container.innerHTML = ''; return false; }
+
+      // Compound the monthly returns into a cumulative growth curve, starting at 0%
+      let factor = 1;
+      const growth = points.map(p => {
+        factor *= (1 + p.pct / 100);
+        return (factor - 1) * 100;
+      });
+
+      const w = 900, h = 220, padL = 44, padR = 16, padT = 20, padB = 28;
+      const minG = Math.min(0, ...growth);
+      const maxG = Math.max(0, ...growth);
+      const range = (maxG - minG) || 1;
+
+      const xStep = (w - padL - padR) / (points.length - 1);
+      const yFor = v => h - padB - ((v - minG) / range) * (h - padT - padB);
+      const xFor = i => padL + i * xStep;
+
+      const linePath = growth.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i).toFixed(1)} ${yFor(v).toFixed(1)}`).join(' ');
+      const fillPath = `${linePath} L ${xFor(growth.length - 1).toFixed(1)} ${yFor(0).toFixed(1)} L ${xFor(0).toFixed(1)} ${yFor(0).toFixed(1)} Z`;
+
+      // Year-boundary tick labels (first data point of each year)
+      let lastYear = null;
+      const ticks = [];
+      points.forEach((p, i) => {
+        if (p.year !== lastYear) { ticks.push({ i, label: p.year }); lastYear = p.year; }
+      });
+
+      const finalVal = growth[growth.length - 1];
+      const zeroY = yFor(0).toFixed(1);
+
+      container.innerHTML = `
+        <svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#8fe4d1" stop-opacity="0.5" />
+              <stop offset="100%" stop-color="#8fe4d1" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <line class="grid-line" x1="${padL}" y1="${zeroY}" x2="${w - padR}" y2="${zeroY}" />
+          <path class="growth-fill" fill="url(#growthGrad)" d="${fillPath}" />
+          <path class="growth-line" d="${linePath}" />
+          ${ticks.map(t => `<text class="axis-label" x="${xFor(t.i).toFixed(1)}" y="${h - 8}" text-anchor="middle">${t.label}</text>`).join('')}
+          <text class="axis-label" x="${padL - 8}" y="${zeroY}" text-anchor="end" dominant-baseline="middle">0%</text>
+          <circle class="end-dot" cx="${xFor(growth.length - 1).toFixed(1)}" cy="${yFor(finalVal).toFixed(1)}" r="4" />
+          <text class="end-value" x="${(xFor(growth.length - 1) - 8).toFixed(1)}" y="${(yFor(finalVal) - 12).toFixed(1)}" text-anchor="end">${finalVal > 0 ? '+' : ''}${finalVal.toFixed(1)}%</text>
+        </svg>`;
+      return true;
+    }
+
+    function renderHeatmap(data) {
+      const container = document.getElementById('heatmap');
+      const years = Object.keys(data).map(Number).sort((a, b) => a - b);
+      if (!years.length) { container.innerHTML = ''; return false; }
+
+      let html = '<table class="heatmap"><thead><tr><th></th>' +
+        MONTH_LABELS.map(m => `<th>${m}</th>`).join('') + '<th class="total-th">Totaal</th></tr></thead><tbody>';
+
+      years.forEach(y => {
+        html += `<tr><td class="yr-cell">${y}</td>`;
+        const monthVals = [];
+        for (let m = 1; m <= 12; m++) {
+          const pct = data[y][m] !== undefined ? data[y][m] : null;
+          const color = pctToColor(pct);
+          if (color === null) {
+            html += `<td><div class="cell cell-empty">—</div></td>`;
+          } else {
+            monthVals.push(pct);
+            html += `<td><div class="cell"><div class="cell-inner" style="background:${color};">${pct > 0 ? '+' : ''}${pct.toFixed(1)}</div></div></td>`;
+          }
+        }
+        const total = monthVals.length ? monthVals.reduce((a, b) => a + b, 0) : null;
+        const totalColor = total === null ? 'var(--text-faint)' : (total >= 0 ? 'var(--mint)' : 'var(--pink)');
+        html += `<td class="total-cell" style="color:${total === null ? 'var(--text-faint)' : 'var(--text)'};">
+          ${total === null ? '—' : `<span style="border-bottom:2px solid ${totalColor};padding-bottom:1px;">${total > 0 ? '+' : ''}${total.toFixed(1)}%</span>`}
+        </td>`;
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+      return true;
+    }
+
+    fetch('resultaten.csv')
+      .then(res => {
+        if (!res.ok) throw new Error('CSV niet gevonden');
+        return res.text();
+      })
+      .then(text => {
+        const data = parseCSV(text);
+        const hasChart = renderGrowthChart(data);
+        const hasHeatmap = renderHeatmap(data);
+        if (!hasChart && !hasHeatmap) {
+          document.getElementById('no-data-msg').style.display = 'block';
+        }
+      })
+      .catch(() => {
+        document.getElementById('no-data-msg').style.display = 'block';
+      });
+  </script>
+
+</body>
+</html>
